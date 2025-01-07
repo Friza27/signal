@@ -86,7 +86,7 @@ def preprocess_data(df):
     return df
 
 # Load model
-model_file = r'random_forest_model_90.pkl'
+model_file = r'C:\Users\Friza Chintia Putri\Documents\VSCODE SEM 3\random_forest_model_90.pkl'
 try:
     rf_model = joblib.load(model_file)
 except Exception as e:
@@ -97,29 +97,35 @@ except Exception as e:
 st.sidebar.title("Segment Pro")
 uploaded_file = st.sidebar.file_uploader("Unggah File CSV", type="csv")
 
-# Define consistent soft color mapping for each segment
-color_mapping = {
-    'Neutral': '#a8d5ba',      # Soft Green
-    'Satisfied': '#ffe066',    # Soft Yellow
-    'Unsatisfied': '#c9a9e3'   # Soft Lavender
-}
-
-# Extract colors as a list for charts that require a palette
-color_palette = [color_mapping[key] for key in ['Neutral', 'Satisfied', 'Unsatisfied']]
 # Fungsi untuk visualisasi tambahan
-# Additional Visualizations
 def additional_visualizations(data):
     st.write("### Hubungan Antar Fitur dengan Hasil Klasifikasi")
+    mappings = {
+        'Gender': {0: 'Female', 1: 'Male'},
+        'City': {0: 'Chicago', 1: 'Houston', 2: 'Los Angeles', 3: 'Miami', 4: 'New York', 5: 'San Francisco'},
+        'Membership Type': {0: 'Bronze', 1: 'Gold', 2: 'Silver'},
+        'Discount Applied': {0: 'No', 1: 'Yes'}
+    }
+
     features = ['Gender', 'Membership Type', 'Total Spend', 'Discount Applied', 'City']
+
     for feature in features:
         if feature in data.columns:
             st.write(f"#### Pengaruh {feature} terhadap Hasil Klasifikasi")
+
+            if feature in mappings:
+                label_order = list(mappings[feature].values())
+                data[feature] = data[feature].map(mappings[feature])
+            else:
+                label_order = None
+
             fig, ax = plt.subplots(figsize=(8, 6))
             sns.countplot(
                 data=data,
                 x=feature,
                 hue='Prediction',
-                palette=color_palette,  # Use consistent palette
+                palette='viridis',
+                order=label_order,
                 ax=ax
             )
             plt.xticks(rotation=45)
@@ -210,19 +216,14 @@ if uploaded_file:
 
                 # Plot Pie Chart
                 fig, ax = plt.subplots()
-                ax.pie(
-                    segment_counts, 
-                    labels=segment_counts.index, 
-                    autopct='%1.1f%%', 
-                    startangle=90, 
-                    colors=[color_mapping[label] for label in segment_counts.index]
-                )
+                ax.pie(segment_counts, labels=segment_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette('Set3', len(segment_counts)))
                 ax.axis('equal')
                 st.pyplot(fig)
 
                 # Membuat Bar Chart dengan warna dan menambahkan tulisan "count"
                 fig, ax = plt.subplots()
-                bars = ax.bar(segment_counts.index, segment_counts.values, color=[color_mapping[label] for label in segment_counts.index])
+                colors = sns.color_palette('Set3', len(segment_counts))
+                bars = ax.bar(segment_counts.index, segment_counts.values, color=colors)
                 for bar in bars:
                     yval = bar.get_height()
                     ax.text(bar.get_x() + bar.get_width()/2, yval + 0.5, int(yval), ha='center', va='bottom')
